@@ -1,0 +1,11 @@
+{
+  "backbone": "resnet18",
+  "num_classes": 2,
+  "image_size": 224,
+  "best_val_acc": 0.95,
+  "best_epoch": 7,
+  "labels": [
+    "dandelion",
+    "grass"
+  ]
+}

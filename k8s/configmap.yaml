@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plant-api-config
+  namespace: default
+data:
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  LOG_LEVEL: "info"
+  # MLflow configuration (optional - fallback to local model if not available)
+  MLFLOW_TRACKING_URI: "http://mlflow-service:5001"
+  MLFLOW_EXPERIMENT_NAME: "plant-classification"

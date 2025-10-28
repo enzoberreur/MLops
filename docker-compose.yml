@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # PostgreSQL for MLflow backend
+  postgres:
+    image: postgres:15-alpine
+    container_name: mlops-postgres
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mlops-network
+
+  # Minio for S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: mlops-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - mlops-network
+
+  # Minio initialization
+  minio-client:
+    image: minio/mc:latest
+    container_name: mlops-minio-client
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/models --ignore-existing;
+      mc mb myminio/plants-images --ignore-existing;
+      mc mb myminio/data --ignore-existing;
+      mc mb myminio/mlflow --ignore-existing;
+      mc anonymous set download myminio/models;
+      mc anonymous set download myminio/plants-images;
+      mc anonymous set download myminio/mlflow;
+      echo 'Buckets created successfully';
+      "
+    networks:
+      - mlops-network
+
+  # MLflow tracking server
+  mlflow:
+    image: python:3.9-slim
+    container_name: mlops-mlflow
+    depends_on:
+      - postgres
+      - minio
+    ports:
+      - "5001:5000"
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+    command: >
+      /bin/sh -c "
+      pip install mlflow==2.9.2 psycopg2-binary==2.9.9 boto3==1.34.10 &&
+      mlflow server 
+      --backend-store-uri postgresql://mlflow:mlflow@postgres:5432/mlflow 
+      --default-artifact-root s3://mlflow/ 
+      --host 0.0.0.0 
+      --port 5000
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - mlops-network
+
+volumes:
+  minio-data:
+  postgres-data:
+
+networks:
+  mlops-network:
+    driver: bridge

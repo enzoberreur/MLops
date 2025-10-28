@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Data (too large for image)
+data/
+data/raw/
+data/processed/
+
+# Models checkpoints (only keep best model)
+models/checkpoints/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Large test files
+test_*.py
+verify_*.py
+
+# Documentation
+*.md
+docs/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# CI/CD
+.github/
+
+# Kubernetes
+k8s/
+
+# Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# MLflow artifacts (use external MLflow server)
+mlruns/
+mlartifacts/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
