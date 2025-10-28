@@ -121,6 +121,30 @@ python3 run_webapp.py
 # Access: http://localhost:30080/docs
 ```
 
+### 6. GitHub & CI/CD Setup
+
+```bash
+# 1. Configure Git repository
+git remote add origin https://github.com/enzoberreur/MLops.git
+
+# 2. Setup self-hosted runner (macOS/Linux)
+cd actions-runner
+./config.sh --url https://github.com/enzoberreur/MLops --token YOUR_TOKEN
+./run.sh &
+
+# 3. Push code (triggers CI/CD)
+git push -u origin main
+
+# CI/CD Pipeline automatically:
+# ✅ Runs linting (flake8)
+# ✅ Runs tests (pytest)
+# ✅ Builds Docker image
+# ✅ Deploys to Kubernetes
+# ✅ Runs integration tests
+
+# Monitor workflow: https://github.com/enzoberreur/MLops/actions
+```
+
 ## 📁 Project Structure
 
 ```
@@ -165,8 +189,8 @@ Rendu_final/
 │   └── hpa.yaml                 # HorizontalPodAutoscaler
 │
 ├── .github/                     # GitHub configuration
-│   ├── workflows/               # CI/CD pipelines (TODO)
-│   └── RUNNER_SETUP.md         # Self-hosted runner guide
+│   └── workflows/               # CI/CD pipelines
+│       └── deploy.yml          # Automated testing & deployment
 │
 ├── docs/                        # Technical documentation
 │   ├── STEP1_REPORT.md         # Data pipeline details
@@ -175,7 +199,8 @@ Rendu_final/
 │   ├── STEP4_MLFLOW.md         # MLflow setup
 │   ├── STEP5_API.md            # API documentation
 │   ├── STEP6_WEBAPP.md         # WebApp guide
-│   └── STEP7_KUBERNETES.md     # K8s deployment guide
+│   ├── STEP7_KUBERNETES.md     # K8s deployment guide
+│   └── CICD_GUIDE.md           # CI/CD setup and troubleshooting
 │
 ├── docker-compose.yml           # MLflow infrastructure
 ├── Dockerfile                   # API container image
@@ -254,7 +279,7 @@ Rendu_final/
 - **MinIO (S3)** - Object storage for models & artifacts
 - **Docker & Docker Compose** - Containerization
 - **Kubernetes** - Container orchestration
-- **GitHub Actions** - CI/CD pipelines (TODO)
+- **GitHub Actions** - CI/CD automation with self-hosted runner
 
 ### API & Web
 - **FastAPI 0.108.0** - High-performance REST API
@@ -281,7 +306,7 @@ Rendu_final/
 - **[S3 Storage](docs/STEP3_S3_STORAGE.md)** - Model versioning and storage
 - **[MLflow Setup](docs/STEP4_MLFLOW.md)** - Experiment tracking configuration
 - **[Kubernetes](docs/STEP7_KUBERNETES.md)** - Deployment and scaling
-- **[GitHub Runner](.github/RUNNER_SETUP.md)** - Self-hosted CI/CD setup
+- **[CI/CD Guide](docs/CICD_GUIDE.md)** - GitHub Actions setup and troubleshooting
 
 ### API Reference
 - **Swagger UI**: http://localhost:8000/docs
@@ -407,7 +432,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🚀 Project Roadmap
 
-### ✅ Completed (7/13 Steps - 54%)
+### ✅ Completed (8/13 Steps - 62%)
 
 1. **Data Pipeline** - Extract, validate, and preprocess images
 2. **Model Training** - ResNet18 transfer learning (95% accuracy)
@@ -416,10 +441,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 5. **API Development** - FastAPI REST API with documentation
 6. **Web Interface** - Streamlit interactive dashboard
 7. **Kubernetes & CI/CD** - Container orchestration and deployment
+8. **GitHub Integration** - Version control, documentation, and CI/CD automation
 
-### 🔜 Upcoming (6/13 Steps)
+### 🔜 Upcoming (5/13 Steps)
 
-8. **GitHub Integration** - Version control and documentation *(CURRENT)*
+
+8. **GitHub Integration** - Version control, documentation, and CI/CD automation
 9. **Airflow Pipelines** - Workflow orchestration
 10. **Monitoring** - Prometheus + Grafana
 11. **Feature Store** - Centralized feature management
