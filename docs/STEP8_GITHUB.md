@@ -1,381 +1,514 @@
-# Step 8: Project Documentation & GitHub Integration 📝
+# 📚 Step 8: GitHub & CI/CD Integration - Completion Report
 
-## Overview
+## 🎯 Objectives
 
-Final organization and documentation of the complete MLOps pipeline, including project structure cleanup, comprehensive documentation, and GitHub best practices.
+✅ Host the entire project on GitHub with clean file structure  
+✅ Consolidate documentation into a single comprehensive README  
+✅ Implement CI/CD pipeline with GitHub Actions  
+✅ Setup self-hosted runner for automated deployments  
+✅ Automate testing, building, and deployment processes  
 
-## What Was Done
+## 📊 Implementation Summary
 
-### 1. Project Structure Cleanup ✅
+### 1. Repository Setup
 
-**Before**: Multiple scattered README files (STEP1_*.md, STEP2_*.md, etc.)
-**After**: Clean, professional structure
+**Repository**: https://github.com/enzoberreur/MLops  
+**Branch**: main  
+**Total Files**: 63 files committed  
+**Total Lines**: 12,107+ insertions  
 
+#### File Structure Cleanup
+
+Before cleanup:
+- Multiple scattered README files (one per step)
+- Unorganized documentation
+- No clear project structure
+
+After cleanup:
 ```
 Rendu_final/
-├── README.md                    # Main documentation (consolidated)
-├── CONTRIBUTING.md              # Contribution guidelines
-├── LICENSE                      # MIT License
-├── requirements.txt             # All dependencies
-├── .gitignore                  # Proper Python gitignore
-│
-├── docs/                       # Technical documentation
-│   ├── STEP1_REPORT.md        # Data pipeline
-│   ├── STEP2_COMPLETION.md    # Training results
-│   ├── STEP3_S3_STORAGE.md    # Storage architecture
-│   ├── STEP4_MLFLOW.md        # MLflow setup
-│   ├── STEP5_API.md           # API documentation
-│   ├── STEP6_WEBAPP.md        # WebApp guide
-│   └── STEP7_KUBERNETES.md    # K8s deployment
-│
-├── src/                        # Source code
-├── k8s/                        # Kubernetes manifests
-├── .github/                    # GitHub configuration
-└── [other project files]
+├── src/              # All source code
+├── data/             # Dataset storage
+├── models/           # Trained models
+├── k8s/              # Kubernetes manifests
+├── .github/          # CI/CD workflows
+├── docs/             # Consolidated documentation
+├── README.md         # Single comprehensive README
+└── requirements.txt  # Dependencies
 ```
 
-### 2. Documentation Improvements ✅
+### 2. Documentation Consolidation
 
-#### Main README.md
-- **Professional badges** (Python, PyTorch, FastAPI, License)
-- **Clear table of contents**
-- **Comprehensive overview** with use case
-- **Quick start guide** (< 5 minutes to run)
-- **Architecture diagrams** (ASCII art for GitHub)
-- **Full tech stack** listing
-- **Performance metrics**
-- **Testing instructions**
-- **Troubleshooting section**
-- **Roadmap** (7/13 steps completed - 54%)
+#### Main README Features
 
-#### CONTRIBUTING.md
-- Code style guidelines
-- Testing standards
-- Commit message conventions
-- PR process
-- Development setup
-- Code of Conduct
+- 📋 **Project Overview**: Clear description and objectives
+- 🚀 **Quick Start Guide**: 6-step installation process
+- 📁 **Project Structure**: Complete file tree
+- 🏗️ **Architecture Diagrams**: Visual system design
+- 🛠️ **Tech Stack**: Comprehensive technology list
+- 📚 **Documentation Links**: References to detailed guides
+- 🧪 **Testing Instructions**: Test suite overview
+- ⚙️ **Performance Metrics**: Model and API benchmarks
+- 🐛 **Troubleshooting**: Common issues and solutions
 
-#### LICENSE
-- MIT License for open source
+#### Progress Tracking
 
-### 3. Files Removed
+- **Completed**: 8/13 steps (62%)
+- **Visual Progress Indicators**: ✅ Completed / 🔜 Upcoming
+- **Step-by-Step Breakdown**: Clear roadmap
 
-Cleaned up redundant/temporary files:
-- ❌ Multiple STEP*.md at root → Moved to docs/
-- ❌ PROGRESS.md → Integrated into README
-- ❌ QUICKSTART.md → Integrated into README
-- ❌ .env.example, .env.s3 → Consolidated
-- ❌ model_storage_summary.txt → Redundant
-- ❌ project_structure.txt → Generated on demand
-- ❌ MLOps project.pdf → Keep separate
+### 3. CI/CD Pipeline Implementation
 
-### 4. New Files Created
+#### GitHub Actions Workflow (`.github/workflows/deploy.yml`)
 
-- ✅ **prepare_data.py** - Simplified data pipeline entry point
-- ✅ **LICENSE** - MIT License
-- ✅ **CONTRIBUTING.md** - Professional contribution guide
-- ✅ **docs/STEP8_GITHUB.md** - This file
+**Trigger Events**:
+- Push to `main` branch
+- Push to `develop` branch
 
-## GitHub Best Practices Applied
+**Pipeline Jobs**:
 
-### 1. Repository Structure
+```yaml
+Job 1: 🏗️ Build & Test
+├─ Setup Python 3.9
+├─ Install dependencies
+├─ Run flake8 linting
+└─ Run pytest unit tests
 
-```
-✅ Clear README.md with badges and sections
-✅ LICENSE file
-✅ CONTRIBUTING.md
-✅ .gitignore (comprehensive Python template)
-✅ requirements.txt (pinned versions)
-✅ docs/ directory for detailed documentation
-✅ Clean root directory (only essential files)
+Job 2: 🚀 Deploy to Kubernetes (main only)
+├─ Build Docker image
+├─ Push to Docker registry
+├─ Apply K8s manifests
+└─ Wait for deployment rollout
+
+Job 3: 🧪 Integration Tests
+├─ Wait for API availability
+├─ Test /health endpoint
+├─ Test /predict endpoint
+└─ Verify deployment success
 ```
 
-### 2. Documentation Standards
+**Runner Configuration**:
+- Type: Self-hosted (macOS ARM64)
+- Name: "Enzo"
+- Version: v2.329.0
+- Status: ✅ Active and listening
 
-- **README.md**
-  - Clear project description
-  - Installation instructions
-  - Usage examples
-  - Architecture diagrams
-  - API documentation links
-  - Contributing guidelines
-  - License information
+#### Workflow Features
 
-- **Code Documentation**
-  - Docstrings on all functions/classes
-  - Type hints
-  - Inline comments for complex logic
-  - README in each major directory
+✅ **Automated Linting**: flake8 code quality checks  
+✅ **Automated Testing**: pytest unit tests  
+✅ **Docker Build**: Automatic image creation  
+✅ **Kubernetes Deployment**: Zero-downtime rolling updates  
+✅ **Integration Testing**: Post-deployment verification  
+✅ **Branch Protection**: Deploy only from main branch  
 
-### 3. Version Control
+### 4. Self-Hosted Runner Setup
 
-- **Branching Strategy** (recommended)
-  ```
-  main            - Production-ready code
-  develop         - Integration branch
-  feature/*       - New features
-  bugfix/*        - Bug fixes
-  release/*       - Release preparation
-  ```
-
-- **Commit Conventions**
-  ```
-  feat(api): add batch prediction endpoint
-  fix(training): resolve memory leak
-  docs(readme): update installation instructions
-  style(code): format with black
-  refactor(storage): simplify S3 client
-  test(api): add integration tests
-  chore(deps): update dependencies
-  ```
-
-### 4. .gitignore Configuration
-
-Properly configured to exclude:
-- Python bytecode (`__pycache__`, `*.pyc`)
-- Virtual environments (`venv/`, `env/`)
-- IDE files (`.vscode/`, `.idea/`)
-- Large model files (except `best_model.pth`)
-- Data files (`data/raw/*`, `data/processed/*`)
-- Logs (`logs/`, `*.log`)
-- MLflow artifacts (`mlruns/`, `mlartifacts/`)
-- Environment variables (`.env`)
-- OS files (`.DS_Store`, `Thumbs.db`)
-
-## README.md Highlights
-
-### Professional Elements
-
-1. **Badges**
-   ```markdown
-   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)]
-   [![PyTorch](https://img.shields.io/badge/PyTorch-2.1.1-red.svg)]
-   [![FastAPI](https://img.shields.io/badge/FastAPI-0.108-green.svg)]
-   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)]
-   ```
-
-2. **Clear Navigation**
-   - Table of contents with anchors
-   - Logical section ordering
-   - Visual hierarchy with emojis
-
-3. **Quick Start** (≤ 5 minutes)
-   ```bash
-   pip3 install -r requirements.txt
-   docker-compose up -d
-   python3 prepare_data.py
-   python3 train_with_mlflow.py
-   python3 run_api.py
-   ```
-
-4. **Architecture Diagrams**
-   - ASCII art for compatibility
-   - Shows data flow
-   - Includes all components
-
-5. **Performance Metrics**
-   - Model: 95% accuracy
-   - API: ~30ms latency
-   - Throughput: ~33 req/s per pod
-
-6. **Comprehensive Sections**
-   - Overview & Features
-   - Quick Start
-   - Project Structure
-   - Architecture
-   - Tech Stack
-   - Documentation links
-   - Testing
-   - Troubleshooting
-   - Contributing
-   - License
-   - Roadmap
-
-## GitHub Repository Checklist
-
-### Essential Files ✅
-- [x] README.md (comprehensive)
-- [x] LICENSE (MIT)
-- [x] .gitignore (Python template)
-- [x] requirements.txt (pinned versions)
-- [x] CONTRIBUTING.md
-
-### Optional But Recommended
-- [ ] CHANGELOG.md (version history)
-- [ ] .github/ISSUE_TEMPLATE/ (issue templates)
-- [ ] .github/PULL_REQUEST_TEMPLATE.md
-- [ ] CODE_OF_CONDUCT.md (for public repos)
-- [ ] SECURITY.md (security policy)
-
-### GitHub Features to Enable
-- [ ] **Issues** - Bug tracking
-- [ ] **Projects** - Kanban boards
-- [ ] **Wiki** - Extended documentation
-- [ ] **Discussions** - Community Q&A
-- [ ] **Actions** - CI/CD (Step 7 prep)
-- [ ] **Releases** - Version tagging
-- [ ] **Branch Protection** - Require PR reviews
-
-## Git Commands for Initial Push
+#### Installation
 
 ```bash
-# Initialize git (if not already done)
-git init
+# Download runner
+cd actions-runner
+curl -o actions-runner-osx-arm64-2.329.0.tar.gz \
+  -L https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-osx-arm64-2.329.0.tar.gz
 
-# Add all files
-git add .
+# Extract
+tar xzf ./actions-runner-osx-arm64-2.329.0.tar.gz
 
-# Initial commit
-git commit -m "feat: initial project setup with complete MLOps pipeline
+# Configure
+./config.sh --url https://github.com/enzoberreur/MLops --token YOUR_TOKEN
 
-- Data pipeline with extraction and preprocessing
-- ResNet18 model training (95% accuracy)
-- S3/Minio storage with versioning
-- MLflow experiment tracking
-- FastAPI REST API
-- Streamlit web interface
-- Kubernetes deployment manifests
-- Comprehensive documentation"
-
-# Add remote (replace with your GitHub repo URL)
-git remote add origin https://github.com/<username>/<repo-name>.git
-
-# Push to GitHub
-git push -u origin main
+# Run
+./run.sh &
 ```
 
-## Repository Settings (GitHub Web)
+#### Runner Status
 
-### General
-- **Description**: "Production-ready MLOps pipeline for plant image classification using PyTorch, MLflow, FastAPI, and Kubernetes"
-- **Topics**: `mlops`, `pytorch`, `fastapi`, `kubernetes`, `mlflow`, `computer-vision`, `deep-learning`, `ci-cd`, `python`, `docker`
-- **Website**: Link to deployed app (if available)
-- **Features**:
-  - ✅ Issues
-  - ✅ Projects
-  - ✅ Wiki
-  - ✅ Discussions
+```
+✅ Connected to GitHub
+✅ Listening for jobs
+✅ Process ID: 56182
+✅ Platform: macOS ARM64
+```
 
-### Branches
-- **Default branch**: `main`
-- **Branch protection rules** (for `main`):
-  - Require pull request reviews
-  - Require status checks to pass
-  - Require branches to be up to date
-  - Include administrators (optional)
+### 5. Git Configuration
 
-## Documentation Organization
+#### Commits
 
-### Primary Documentation
-- **README.md** - Overview, quick start, high-level architecture
-- **CONTRIBUTING.md** - How to contribute
-- **LICENSE** - Legal terms
+**Initial Commit**:
+```
+Commit: aa625aa
+Message: "feat: Initial commit - Complete MLOps pipeline with CI/CD"
+Files: 63 changed
+Insertions: 12,107+
+Date: 2025-10-28
+```
 
-### Technical Documentation (docs/)
-- **STEP1_REPORT.md** - Data pipeline implementation
-- **STEP2_COMPLETION.md** - Model training and results
-- **STEP3_S3_STORAGE.md** - Storage architecture
-- **STEP4_MLFLOW.md** - Experiment tracking setup
-- **STEP5_API.md** - API endpoints and usage
-- **STEP6_WEBAPP.md** - Web interface guide
-- **STEP7_KUBERNETES.md** - Deployment and scaling
+**Documentation Update**:
+```
+Commit: baf7433
+Message: "docs: Update README with Step 8 completion - GitHub & CI/CD integration"
+Files: 1 changed (README.md)
+Changes: +35/-8
+Date: 2025-10-28
+```
 
-### Inline Documentation
-- Docstrings in all Python files
-- Comments for complex logic
-- Type hints for clarity
+#### .gitignore Configuration
 
-## Visual Elements
+Excluded from repository:
+```
+actions-runner/          # Self-hosted runner binaries
+__pycache__/            # Python cache
+*.pyc                   # Compiled Python
+.env                    # Environment variables
+data/raw/               # Original dataset
+mlflow_db/              # MLflow database
+.DS_Store               # macOS files
+```
 
-### README.md Includes
-- 🎯 Emojis for visual navigation
-- 📊 Badges for quick info
-- 🏗️ ASCII architecture diagrams
-- ✅ Status indicators
-- 📁 Directory tree structures
-- 💻 Code blocks with syntax highlighting
+## 📈 Achievements
 
-### GitHub Enhancements
-- **Social Preview**: Create og:image with project logo
-- **README badges**: Build status, coverage, version
-- **GIF demos**: Record API/WebApp usage
-- **Mermaid diagrams**: For complex flows
+### Code Quality
 
-## Metrics & KPIs
+✅ **Clean Structure**: Professional project organization  
+✅ **Single README**: Consolidated documentation  
+✅ **Clear Separation**: Source code, data, configs, tests  
+✅ **Documentation**: Comprehensive guides for each step  
 
-### Documentation Quality
-- ✅ README completeness: 100%
-- ✅ Code documentation: ~80%
-- ✅ API documentation: 100% (OpenAPI)
-- ✅ Test coverage: ~70%
+### Automation
 
-### Project Organization
-- ✅ Directory structure: Clean ✓
-- ✅ File naming: Consistent ✓
-- ✅ Module organization: Logical ✓
-- ✅ Redundant files: Removed ✓
+✅ **CI/CD Pipeline**: Fully automated deployment  
+✅ **Self-Hosted Runner**: Local execution environment  
+✅ **Automated Testing**: Linting + unit tests + integration tests  
+✅ **Docker Integration**: Containerized builds  
+✅ **Kubernetes Deployment**: Automatic rolling updates  
 
-## Maintenance
+### Developer Experience
 
-### Regular Updates
-- Update dependencies monthly
-- Review and close stale issues
-- Update documentation for changes
-- Maintain CHANGELOG.md
-- Tag releases (v1.0.0, v1.1.0, etc.)
+✅ **Quick Start**: 6 simple steps to run entire pipeline  
+✅ **Documentation**: 8+ detailed guides  
+✅ **Troubleshooting**: Common issues documented  
+✅ **Testing**: Comprehensive test suite  
 
-### Community Engagement
-- Respond to issues within 48h
-- Review PRs within 1 week
-- Update README for breaking changes
-- Publish release notes
+## 🔍 CI/CD Pipeline Details
 
-## Next Steps
+### Workflow Execution
 
-### Step 9: Airflow Integration 🔄
-- Create DAG for data pipeline
-- Schedule model retraining
-- Automate deployment
+When code is pushed to GitHub:
 
-### Step 10: Monitoring 📊
-- Prometheus metrics
-- Grafana dashboards
-- Alerting
+1. **Trigger**: Push event detected
+2. **Runner**: Self-hosted runner picks up job
+3. **Build & Test**: 
+   - Lint code with flake8
+   - Run pytest unit tests
+   - Fail fast if issues detected
+4. **Deploy** (main branch only):
+   - Build Docker image
+   - Apply Kubernetes manifests
+   - Wait for rollout completion
+5. **Integration Tests**:
+   - Verify API health
+   - Test prediction endpoint
+   - Confirm deployment success
 
-### Step 11-13: Advanced Topics
-- Feature store
-- Load testing
-- Continuous training
+### Expected Output
 
-## Summary
+```
+✅ Linting passed (flake8)
+✅ Unit tests passed (pytest)
+✅ Docker image built
+✅ Kubernetes deployment successful
+✅ Integration tests passed
+✅ API responding on http://localhost:30080
+```
 
-**Step 8 Achievements**:
-- ✅ Professional README.md
-- ✅ Clean project structure
-- ✅ Comprehensive documentation
-- ✅ GitHub best practices
-- ✅ Contribution guidelines
-- ✅ MIT License
-- ✅ Proper .gitignore
+## 📚 Documentation Structure
 
-**Documentation Coverage**:
-- 7 detailed STEP guides (docs/)
-- 1 comprehensive README
-- 1 contributing guide
-- 1 runner setup guide
-- Inline code documentation
+### Main Documentation
 
-**Ready for**:
-- ✅ GitHub repository push
-- ✅ Open source collaboration
-- ✅ Portfolio showcase
-- ✅ Production deployment
+- **README.md**: Complete project overview (471 lines)
 
-**Step 8: COMPLETED** ✅
+### Step-by-Step Guides
+
+1. **STEP1_REPORT.md**: Data pipeline implementation
+2. **STEP2_COMPLETION.md**: Model training results
+3. **STEP3_S3_STORAGE.md**: MinIO S3 storage setup
+4. **STEP4_MLFLOW.md**: MLflow experiment tracking
+5. **STEP5_API.md**: FastAPI REST API
+6. **STEP6_WEBAPP.md**: Streamlit web interface
+7. **STEP7_KUBERNETES.md**: Kubernetes deployment
+8. **STEP8_GITHUB.md**: GitHub & CI/CD (this file)
+
+### Technical Documentation
+
+- **CICD_GUIDE.md**: CI/CD troubleshooting and setup
+- **Dockerfile**: Container image definition
+- **docker-compose.yml**: MLflow infrastructure
+- **k8s/*.yaml**: Kubernetes manifests
+
+## 🚀 How to Use CI/CD
+
+### Automatic Deployment
+
+```bash
+# 1. Make changes to code
+vim src/api/main.py
+
+# 2. Commit changes
+git add .
+git commit -m "feat: Add new endpoint"
+
+# 3. Push to GitHub (triggers CI/CD)
+git push origin main
+
+# 4. Monitor workflow
+# Visit: https://github.com/enzoberreur/MLops/actions
+
+# 5. Verify deployment
+kubectl get pods -l app=plant-api
+curl http://localhost:30080/health
+```
+
+### Manual Deployment
+
+```bash
+# If CI/CD fails or for local testing
+./deploy_k8s.sh
+```
+
+## 🧪 Testing the Pipeline
+
+### 1. Check Runner Status
+
+```bash
+cd actions-runner
+ps aux | grep "Runner.Listener"
+```
+
+Expected output:
+```
+enzoberreur  56182  ... Runner.Listener run
+```
+
+### 2. Trigger Workflow
+
+```bash
+# Make a small change
+echo "# Test" >> README.md
+
+# Commit and push
+git add README.md
+git commit -m "test: Trigger CI/CD"
+git push origin main
+```
+
+### 3. Monitor Execution
+
+Visit: https://github.com/enzoberreur/MLops/actions
+
+Expected workflow:
+```
+🏗️ Build & Test      [✅ Success]
+🚀 Deploy to K8s      [✅ Success]
+🧪 Integration Tests  [✅ Success]
+```
+
+### 4. Verify Deployment
+
+```bash
+# Check pods
+kubectl get pods -l app=plant-api
+
+# Expected: 2 pods running
+NAME                         READY   STATUS    RESTARTS   AGE
+plant-api-xxxxxxxxxx-xxxxx   1/1     Running   0          2m
+plant-api-xxxxxxxxxx-xxxxx   1/1     Running   0          2m
+
+# Test API
+curl http://localhost:30080/health
+# Expected: {"status": "healthy", "model_loaded": true}
+```
+
+## 🔧 Troubleshooting
+
+### Runner Not Picking Up Jobs
+
+**Problem**: Workflow queued but not executing
+
+**Solutions**:
+```bash
+# Check runner status
+ps aux | grep "Runner.Listener"
+
+# Restart runner
+cd actions-runner
+./run.sh &
+
+# Check GitHub
+# Settings > Actions > Runners
+# Should show "Enzo" with green dot
+```
+
+### Docker Build Fails
+
+**Problem**: "failed to create LLB definition"
+
+**Solutions**:
+```bash
+# Clean Docker cache
+docker system prune -a -f
+
+# Rebuild image
+docker build -t plant-classification-api:latest .
+
+# Check .dockerignore
+cat .dockerignore
+```
+
+### Kubernetes Deployment Fails
+
+**Problem**: Pods not starting
+
+**Solutions**:
+```bash
+# Check pod status
+kubectl get pods -l app=plant-api
+
+# View pod logs
+kubectl logs -l app=plant-api --tail=50
+
+# Describe pod for events
+kubectl describe pod <pod-name>
+
+# Common issues:
+# - ImagePullBackOff: Image not available
+# - CrashLoopBackOff: Container crashes on start
+# - Pending: Insufficient resources
+```
+
+### Integration Tests Fail
+
+**Problem**: API not responding in tests
+
+**Solutions**:
+```bash
+# Verify service
+kubectl get svc plant-api-service
+
+# Port forward for debugging
+kubectl port-forward svc/plant-api-service 8000:8000
+
+# Test locally
+curl http://localhost:8000/health
+
+# Check if NodePort is accessible
+curl http://localhost:30080/health
+```
+
+## 📊 Metrics
+
+### Repository Stats
+
+- **Total Commits**: 2
+- **Total Files**: 63
+- **Lines of Code**: 12,107+
+- **Documentation**: 8 detailed guides
+- **README Size**: 471 lines
+
+### CI/CD Performance
+
+- **Build Time**: ~2-3 minutes (Docker build)
+- **Test Time**: ~30 seconds (linting + unit tests)
+- **Deploy Time**: ~1-2 minutes (K8s rollout)
+- **Integration Tests**: ~10 seconds
+- **Total Pipeline**: ~4-6 minutes
+
+### Code Quality
+
+- **Linting**: flake8 compliant
+- **Test Coverage**: Unit tests for core functions
+- **Documentation**: Comprehensive guides
+- **Type Hints**: Pydantic models
+- **API Docs**: Auto-generated OpenAPI
+
+## 🎯 Success Criteria
+
+✅ **Repository Hosted on GitHub**: https://github.com/enzoberreur/MLops  
+✅ **Clean File Structure**: Professional organization  
+✅ **Single Comprehensive README**: Consolidated documentation  
+✅ **CI/CD Pipeline**: Automated testing and deployment  
+✅ **Self-Hosted Runner**: Configured and active  
+✅ **Automated Testing**: Linting, unit tests, integration tests  
+✅ **Docker Integration**: Containerized builds  
+✅ **Kubernetes Deployment**: Automatic updates  
+✅ **Documentation**: 8+ detailed guides  
+
+## 🔄 Next Steps
+
+### Step 9: Airflow Orchestration
+- Setup Apache Airflow
+- Create DAGs for:
+  - Data ingestion pipeline
+  - Model training pipeline
+  - Model deployment pipeline
+- Schedule automated workflows
+
+### Step 10: Monitoring
+- Setup Prometheus for metrics
+- Setup Grafana for visualization
+- Monitor:
+  - API performance
+  - Model predictions
+  - Resource usage
+  - Error rates
+
+### Step 11: Feature Store
+- Implement feature store (Feast)
+- Centralized feature management
+- Feature versioning
+- Feature serving
+
+## 📚 Additional Resources
+
+### GitHub
+- **Repository**: https://github.com/enzoberreur/MLops
+- **Actions**: https://github.com/enzoberreur/MLops/actions
+- **Issues**: https://github.com/enzoberreur/MLops/issues
+
+### Documentation
+- **Main README**: [README.md](../README.md)
+- **CI/CD Guide**: [CICD_GUIDE.md](CICD_GUIDE.md)
+- **Kubernetes Guide**: [STEP7_KUBERNETES.md](STEP7_KUBERNETES.md)
+
+### Monitoring
+- **GitHub Actions**: Workflow execution logs
+- **Runner Logs**: `actions-runner/_diag/`
+- **Kubernetes Logs**: `kubectl logs -l app=plant-api`
+- **Docker Logs**: `docker logs <container-id>`
+
+## ✅ Conclusion
+
+Step 8 is **COMPLETE** with:
+
+1. ✅ **GitHub Repository**: Professionally structured and documented
+2. ✅ **CI/CD Pipeline**: Fully automated with GitHub Actions
+3. ✅ **Self-Hosted Runner**: Configured and active
+4. ✅ **Clean Documentation**: Single comprehensive README
+5. ✅ **Automated Testing**: Linting, unit tests, integration tests
+6. ✅ **Kubernetes Integration**: Automatic deployments
+
+The project is now:
+- **Version controlled** on GitHub
+- **Professionally structured** with clean organization
+- **Well documented** with comprehensive guides
+- **Fully automated** with CI/CD pipeline
+- **Production ready** with Kubernetes deployment
+
+**Progress**: 8/13 steps completed (62%)  
+**Next Step**: Airflow workflow orchestration
 
 ---
 
-**Project Status**: 8/13 steps (62% complete)
-
-**Next**: Airflow orchestration for automated workflows
+*Generated: October 28, 2025*  
+*Project: MLOps - Plant Classification Pipeline*  
+*Institution: Albert School*
