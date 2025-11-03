@@ -1,0 +1,229 @@
+volumes:
+  minio_data:
+  mlflow_store:
+  airflow_logs:
+  grafana_data:
+
+services:
+  minio:
+    image: minio/minio:RELEASE.2023-09-07T02-05-02Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  bootstrap:
+    image: mlops-app:latest
+    command: python scripts/bootstrap_minio.py
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_DATA_BUCKET: ${MINIO_DATA_BUCKET:-dandelion-data}
+      MINIO_MODEL_BUCKET: ${MINIO_MODEL_BUCKET:-dandelion-models}
+      MLFLOW_ARTIFACT_BUCKET: ${MLFLOW_ARTIFACT_BUCKET:-mlflow-artifacts}
+    depends_on:
+      minio:
+        condition: service_started
+    restart: "no"
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d airflow -U airflow"]
+      interval: 5s
+      retries: 5
+      timeout: 5s
+
+  mlflow:
+    image: mlops-app:latest
+    command: >
+      mlflow server --backend-store-uri sqlite:///mlflow/mlflow.db
+      --default-artifact-root s3://mlflow-artifacts
+      --host 0.0.0.0 --port 5000
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    depends_on:
+      minio:
+        condition: service_started
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "5500:5000"
+    volumes:
+      - mlflow_store:/app/mlflow
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mlops-app:latest
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_MODEL_BUCKET: dandelion-models
+      MINIO_MODEL_PATH: models/latest/best_model.pt
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      mlflow:
+        condition: service_started
+      minio:
+        condition: service_started
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+
+  streamlit:
+    image: mlops-app:latest
+    environment:
+      API_URL: http://api:8000
+    command: streamlit run app/webapp/streamlit_app.py --server.address=0.0.0.0 --server.port=8501
+    depends_on:
+      - api
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./:/app
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./monitoring/grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml:ro
+      - ./monitoring/grafana_dashboard.json:/etc/grafana/provisioning/dashboards/dandelion.json:ro
+    depends_on:
+      - prometheus
+
+  airflow-init:
+    image: apache/airflow:2.7.3-python3.10
+    entrypoint: ["/bin/bash", "-c"]
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-supersecretkey}
+      PYTHONPATH: /opt/airflow/app
+      _PIP_ADDITIONAL_REQUIREMENTS: "minio==7.2.2 mlflow==2.9.2 torch==1.13.1 torchvision==0.14.1 requests==2.31.0 Pillow==10.0.1 scikit-learn==1.3.1"
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_DATA_BUCKET: ${MINIO_DATA_BUCKET:-dandelion-data}
+      MINIO_MODEL_BUCKET: ${MINIO_MODEL_BUCKET:-dandelion-models}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    command: |
+      pip install --no-cache-dir -r /opt/airflow/app/requirements.txt && \
+      airflow db migrate && \
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./:/opt/airflow/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+
+  airflow-webserver:
+    image: apache/airflow:2.7.3-python3.10
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-supersecretkey}
+      PYTHONPATH: /opt/airflow/app
+      _PIP_ADDITIONAL_REQUIREMENTS: "minio==7.2.2 mlflow==2.9.2 torch==1.13.1 torchvision==0.14.1 requests==2.31.0 Pillow==10.0.1 scikit-learn==1.3.1"
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_DATA_BUCKET: ${MINIO_DATA_BUCKET:-dandelion-data}
+      MINIO_MODEL_BUCKET: ${MINIO_MODEL_BUCKET:-dandelion-models}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    command: airflow webserver
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./:/opt/airflow/app
+      - airflow_logs:/opt/airflow/logs
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.3-python3.10
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-supersecretkey}
+      PYTHONPATH: /opt/airflow/app
+      _PIP_ADDITIONAL_REQUIREMENTS: "minio==7.2.2 mlflow==2.9.2 torch==1.13.1 torchvision==0.14.1 requests==2.31.0 Pillow==10.0.1 scikit-learn==1.3.1"
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_DATA_BUCKET: ${MINIO_DATA_BUCKET:-dandelion-data}
+      MINIO_MODEL_BUCKET: ${MINIO_MODEL_BUCKET:-dandelion-models}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    command: airflow scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./:/opt/airflow/app
+      - airflow_logs:/opt/airflow/logs
