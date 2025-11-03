@@ -140,7 +140,7 @@ services:
       - prometheus
 
   statsd-exporter:
-    image: prom/statsd-exporter:v0.23.2
+    image: prom/statsd-exporter:v0.27.1
     command:
       - "--statsd.listen-udp=:9125"
       - "--statsd.listen-tcp=:9125"
