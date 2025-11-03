@@ -54,8 +54,8 @@
       },
       "targets": [
         {
-          "expr": "statsd_gauges_airflow_scheduler_heartbeat",
-          "legendFormat": "Scheduler heartbeat",
+      "expr": "rate(airflow_scheduler_heartbeat[1m]) * 60",
+      "legendFormat": "Scheduler heartbeat / min",
           "refId": "A"
         }
       ],
@@ -103,17 +103,17 @@
       },
       "targets": [
         {
-          "expr": "rate(statsd_counters_airflow_dagrun_success_total[5m])",
-          "legendFormat": "DagRun success",
+      "expr": "sum(increase({__name__=~\"airflow_ti_finish_.*_success\"}[5m]))",
+      "legendFormat": "Task success (5m)",
           "refId": "A"
         },
         {
-          "expr": "rate(statsd_counters_airflow_dagrun_failed_total[5m])",
-          "legendFormat": "DagRun failed",
+      "expr": "sum(increase({__name__=~\"airflow_ti_finish_.*_failed\"}[5m]))",
+      "legendFormat": "Task failed (5m)",
           "refId": "B"
         }
       ],
-      "title": "DagRun Throughput (5m rate)",
+  "title": "Task Throughput (5m window)",
       "type": "timeseries"
     }
   ],

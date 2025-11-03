@@ -12,6 +12,61 @@ Projet MLOps minimaliste pour classifier des images de pissenlits et d'herbe.
 - **CI/CD** : GitHub Actions
 - **Monitoring** : Prometheus + Grafana (optionnel)
 
+## Choix techniques & objectifs
+
+- **Airflow + MinIO** : pipeline déclaratif pour automatiser le téléchargement des images, la préparation et l'entraînement. MinIO offre un stockage S3 compatible reproductible en local et en cluster.
+- **PyTorch** : modèle léger (ResNet18) finement ajusté pour un dataset restreint (200 images par classe) avec des transformations simples (resize + augmentation légère) afin de limiter l'overfitting.
+- **MLflow Tracking** : centralise les métriques (loss, accuracy, f1) et l'enregistrement du modèle. Chaque run conserve le code source et permet la comparaison de plusieurs entraînements.
+- **FastAPI** : service de prédiction synchrone qui télécharge le dernier checkpoint depuis MinIO au démarrage, expose `/predict` et `/health`, et publie des métriques Prometheus.
+- **Streamlit** : interface pour tester rapidement les prédictions et monitorer la disponibilité de l'API (mode local ou API distante).
+- **Prometheus + Grafana** : supervision des appels API (`/predict`) et de la santé du scheduler Airflow via `statsd-exporter`. Deux dashboards sont provisionnés automatiquement.
+- **CI/CD GitHub Actions** : pipeline unique (tests → build → déploiement Minikube) pour valider la stack bout-en-bout. Les images sont publiées sur GHCR et peuvent être retagées pour Docker Hub.
+
+### Résultats observés (référence)
+
+Les métriques dépendent fortement des tirages aléatoires (split train/val). Avec la configuration par défaut (`IMAGE_SIZE=224`, `EPOCHS=5`), un run typique donne :
+
+- **Accuracy validation** : 0.90 ± 0.03
+- **F1-score validation** : 0.89 ± 0.04
+- **Temps d'entraînement** : ~4 minutes sur CPU (LocalExecutor Airflow)
+
+### Captures d'écran principales
+
+| Vue | Description |
+| --- | ----------- |
+| ![Run MLflow](docs/screenshots/mlflow.png) | Vue d'ensemble de l'expérience `dandelion-classifier`, incluant les paramètres et le succès du run. |
+| ![Courbes MLflow](docs/screenshots/mlflow_metrics.png) | Historique des métriques (loss & accuracy) capturées pendant l'entraînement PyTorch. |
+| ![Stockage MinIO](docs/screenshots/minio.png) | Buckets `dandelion-models` et `mlflow-artifacts` contenant les jeux de données et le checkpoint `models/latest/best_model.pt`. |
+| ![API Streamlit](docs/screenshots/streamlit.png) | Interface utilisateur pour tester les prédictions depuis un navigateur. |
+| ![Dashboard API Grafana](docs/screenshots/grafana_calssifier.png) | Monitoring temps réel du trafic `/predict` (latence p90 et nombre d'appels). |
+| ![Dashboard Airflow Grafana](docs/screenshots/airflow_data_pipeline.png) | Supervision du scheduler Airflow et du throughput des tâches via StatsD exporter. |
+
+> Captures réalisées sur l’environnement Docker Compose (identique à l’environnement Minikube côté services).
+
+## Images Docker
+
+- **GHCR (par défaut CI/CD)** : `https://ghcr.io/enzoberreur/mlops/mlops-app:<commit-sha>`
+- **Publication Docker Hub (option)** :
+  ```bash
+  export DOCKERHUB_USER=enzoberreur
+  docker pull ghcr.io/enzoberreur/mlops/mlops-app:<commit-sha>
+  docker tag ghcr.io/enzoberreur/mlops/mlops-app:<commit-sha> docker.io/$DOCKERHUB_USER/mlops-app:<commit-sha>
+  docker push docker.io/$DOCKERHUB_USER/mlops-app:<commit-sha>
+  ```
+  Créez le repository Docker Hub `docker.io/enzoberreur/mlops-app` puis communiquez les URLs des tags pertinents (ex. `https://hub.docker.com/r/enzoberreur/mlops-app/tags?name=<commit-sha>`).
+
+## Artéfacts de production
+
+- **Buckets MinIO** :
+  - Données brutes : `dandelion-data/raw/`
+  - Données prétraitées : `dandelion-data/processed/`
+  - Modèle : `dandelion-models/models/latest/best_model.pt`
+  - Artifacts MLflow : `mlflow-artifacts/<experiment-id>/<run-id>/artifacts/`
+- **MLflow Experiment** : `dandelion-classifier`
+  - Les runs sont taggés avec l'ID Airflow (`dag_id`, `execution_date`) pour tracer leur provenance.
+  - Reproductibilité garantie par la sauvegarde du modèle `mlflow.pytorch`.
+- **Airflow Vars/Connections** : gérées via `.env` et injectées dans les containers (`MINIO_*`, `MLFLOW_TRACKING_URI`, etc.). Export possible via `airflow variables export`.
+
 ## Architecture
 ```
             ┌─────────────┐          ┌───────────┐         ┌──────────────┐
@@ -128,6 +183,12 @@ pytest
 - `tests` : installe les dépendances et exécute `pytest`.
 - `build` : construit l'image Docker et la pousse sur GHCR (`ghcr.io/<repo>/mlops-app`).
 - `deploy` : démarre Minikube dans le runner, charge l'image publiée et applique les manifests Kubernetes.
+
+| Étape | Capture |
+| --- | --- |
+| Tests unitaires | ![GitHub Actions - tests](docs/screenshots/github_action_tests.png) |
+| Build & push | ![GitHub Actions - build](docs/screenshots/github_action_build.png) |
+| Déploiement Minikube | ![GitHub Actions - deploy](docs/screenshots/github_action_deploy.png) |
 
 Créer un environnement GitHub Actions sécurisé :
 - Le dépôt doit être public pour que GHCR soit accessible sans credentials supplémentaires (sinon, fournir un `imagePullSecret`).
