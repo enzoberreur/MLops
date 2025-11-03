@@ -8,12 +8,15 @@ WORKDIR /app
 
 COPY requirements.txt ./
 
-RUN apt-get update \ 
-    && apt-get install --no-install-recommends -y build-essential libgl1 libglib2.0-0 \ 
-    && pip install --upgrade pip \ 
-    && pip install -r requirements.txt \ 
-    && apt-get purge -y build-essential \ 
-    && apt-get autoremove -y \ 
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+ENV PIP_EXTRA_INDEX_URL=${TORCH_INDEX_URL}
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y build-essential libgl1 libglib2.0-0 \
+    && pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && apt-get purge -y build-essential \
+    && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
