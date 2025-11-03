@@ -39,6 +39,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model: DandelionClassifier | None = None
 class_names = CLASS_NAMES
 transform = get_inference_transform(IMAGE_SIZE)
+model_ready = False
 
 PREDICTION_COUNTER = Counter("predictions_total", "Number of predictions served", ["result"])
 PREDICTION_LATENCY = Histogram("prediction_latency_seconds", "Latency for prediction endpoint")
@@ -52,7 +53,7 @@ def _download_model() -> None:
 
 
 def _load_model() -> None:
-    global model, class_names  # noqa: PLW0603 - module level cache
+    global model, class_names, model_ready  # noqa: PLW0603 - module level cache
     if not MODEL_LOCAL_PATH.exists():
         _download_model()
     checkpoint = torch.load(MODEL_LOCAL_PATH, map_location=device)
@@ -63,6 +64,7 @@ def _load_model() -> None:
     model_instance.to(device)
     model = model_instance
     LOG.info("Model loaded with classes: %s", class_names)
+    model_ready = True
 
 
 @app.on_event("startup")
@@ -70,19 +72,20 @@ async def startup_event() -> None:
     try:
         _load_model()
     except Exception as exc:  # pragma: no cover - startup failure should be visible in logs
-        LOG.error("Failed to load model on startup: %s", exc)
-        raise
+        LOG.warning("Model not available at startup: %s", exc)
+        # The service remains up; subsequent prediction calls will fail until model is loaded.
 
 
 @app.get("/health")
 def health() -> Dict[str, Any]:
-    return {"status": "ok", "classes": class_names}
+    status = "ready" if model_ready else "initializing"
+    return {"status": status, "classes": class_names}
 
 
 @app.post("/predict")
 def predict(file: UploadFile = File(...)) -> Dict[str, Any]:
     if model is None:
-        raise HTTPException(status_code=500, detail="Model not loaded")
+        raise HTTPException(status_code=503, detail="Model not loaded")
 
     try:
         contents = file.file.read()
