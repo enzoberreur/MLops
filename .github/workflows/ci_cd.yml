@@ -7,7 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ format('{0}/mlops-app', toLower(github.repository)) }}
 
 jobs:
   tests:
@@ -43,12 +42,15 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare image name
+        run: echo "IMAGE_NAME=${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/mlops-app" >> $GITHUB_ENV
+        shell: bash
       - name: Build image
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker build -t $IMAGE_NAME:${{ github.sha }} .
       - name: Push image
         run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push $IMAGE_NAME:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -65,15 +67,18 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare image name
+        run: echo "IMAGE_NAME=${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/mlops-app" >> $GITHUB_ENV
+        shell: bash
       - name: Set up Minikube
         uses: medyagh/setup-minikube@v0.0.15
       - name: Start Minikube
         run: minikube start --driver=docker
       - name: Pull published image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        run: docker pull $IMAGE_NAME:${{ github.sha }}
       - name: Load image into Minikube
         run: |
-          minikube image load ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          minikube image load $IMAGE_NAME:${{ github.sha }}
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/minikube-manifest.yaml
