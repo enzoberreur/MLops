@@ -9,8 +9,12 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from minio import Minio
-from minio.error import S3Error
+try:
+    from minio import Minio
+    from minio.error import S3Error
+except ImportError:  # pragma: no cover - MinIO optional for unit tests
+    Minio = None  # type: ignore[assignment]
+    S3Error = Exception  # type: ignore[assignment]
 from torch.utils.data import DataLoader, Dataset, Subset, random_split
 from torchvision import datasets, transforms
 
@@ -123,6 +127,11 @@ def create_dataloaders(config: DataConfig) -> Tuple[DataLoader, DataLoader, list
 
 
 def get_minio_client() -> Minio:
+    if Minio is None:  # pragma: no cover - guarded for tests
+        raise ImportError(
+            "Le package 'minio' est requis pour interagir avec MinIO. "
+            "Installez-le avec `pip install minio`."
+        )
     endpoint = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
     access_key = os.environ.get("MINIO_ACCESS_KEY", "minioadmin")
     secret_key = os.environ.get("MINIO_SECRET_KEY", "minioadmin")

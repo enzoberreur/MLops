@@ -60,6 +60,10 @@ Services exposés :
 - Prometheus : http://localhost:9090
 - Grafana : http://localhost:3000 (admin/admin)
 
+Sur Streamlit, vous pouvez choisir entre deux modes d'inférence :
+- **API distante** : envoie l'image à FastAPI (`/predict`).
+- **Local (MinIO)** : télécharge un checkpoint `.pt` depuis MinIO et exécute l'inférence directement dans l'application.
+
 > Astuce : exécuter une première fois `python scripts/bootstrap_minio.py` pour créer les buckets sur MinIO (si vous n'utilisez pas Docker Compose).
 
 ### Pipelines Airflow
