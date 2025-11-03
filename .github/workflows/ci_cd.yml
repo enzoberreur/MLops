@@ -78,7 +78,8 @@ jobs:
         run: docker pull $IMAGE_NAME:${{ github.sha }}
       - name: Load image into Minikube
         run: |
-          minikube image load $IMAGE_NAME:${{ github.sha }}
+          docker tag $IMAGE_NAME:${{ github.sha }} mlops-app:latest
+          minikube image load mlops-app:latest
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/minikube-manifest.yaml
