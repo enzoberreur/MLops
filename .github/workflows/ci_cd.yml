@@ -43,8 +43,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare image name
-        run: echo "IMAGE_NAME=${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/mlops-app" >> $GITHUB_ENV
         shell: bash
+        run: echo "IMAGE_NAME=${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/mlops-app" >> $GITHUB_ENV
       - name: Build image
         run: |
           docker build -t $IMAGE_NAME:${{ github.sha }} .
@@ -68,8 +68,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare image name
-        run: echo "IMAGE_NAME=${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/mlops-app" >> $GITHUB_ENV
         shell: bash
+        run: echo "IMAGE_NAME=${{ env.REGISTRY }}/${GITHUB_REPOSITORY,,}/mlops-app" >> $GITHUB_ENV
       - name: Set up Minikube
         uses: medyagh/setup-minikube@v0.0.15
       - name: Start Minikube
