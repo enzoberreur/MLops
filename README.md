@@ -59,6 +59,7 @@ Services exposés :
 - MinIO : http://localhost:9001 (console)
 - Prometheus : http://localhost:9090
 - Grafana : http://localhost:3000 (admin/admin)
+- Tableau de bord Grafana "Dandelion Classifier" (métriques API) et "Airflow Overview" (Scheduler + DagRun)
 
 Sur Streamlit, vous pouvez choisir entre deux modes d'inférence :
 - **API distante** : envoie l'image à FastAPI (`/predict`).
@@ -79,6 +80,8 @@ Sur Streamlit, vous pouvez choisir entre deux modes d'inférence :
 Prometheus scrappe l'endpoint `/metrics` exposé par FastAPI. Le dashboard Grafana (importé automatiquement) montre :
 - compteur total des prédictions,
 - latence p90 de l'endpoint `/predict`.
+
+L'exporter StatsD collecte également les métriques Airflow (scheduler heartbeat, DagRun success/fail) accessibles dans le dashboard "Airflow Overview".
 
 ## Développement local hors Docker
 
