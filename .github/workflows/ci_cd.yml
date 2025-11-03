@@ -7,7 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/mlops-app
+  REPO_LOWER: ${{ github.repository | toLower }}
+  IMAGE_NAME: ${{ env.REPO_LOWER }}/mlops-app
 
 jobs:
   tests:
