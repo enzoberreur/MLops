@@ -181,33 +181,86 @@ sequenceDiagram
 
 ## Démarrage rapide local (Docker Compose)
 
-1. Copier le fichier d'exemple d'environnement et ajuster les variables :
-   ```bash
-   cp .env.example .env
-   python -c "import secrets; print(secrets.token_urlsafe(32))"  # générer AIRFLOW_FERNET_KEY
-   ```
-2. Construire les images :
-   ```bash
-   docker compose build
-   ```
-3. Initialiser Airflow :
-   ```bash
-   docker compose up airflow-init
-   ```
-4. Lancer l'ensemble des services :
-   ```bash
-   docker compose up
-   ```
+### ⚡ Lancement en 3 étapes
+
+```bash
+# 1. Construire les images Docker
+docker compose build
+
+# 2. Initialiser Airflow (une seule fois)
+docker compose up airflow-init
+
+# 3. Lancer tous les services
+docker compose up -d
+```
+
+### 📋 Vérification
+
+Attendez 30-60 secondes que tous les services démarrent :
+
+```bash
+# Voir l'état des conteneurs
+docker compose ps
+
+# Vérifier les logs
+docker compose logs -f airflow-scheduler
+docker compose logs -f api
+```
+
+### 🌐 URLs d'accès
 
 Services exposés :
 - Airflow UI : http://localhost:8080 (login/password `admin/admin`)
 - FastAPI : http://localhost:8000/docs
 - Streamlit : http://localhost:8501
-- MLflow : http://localhost:5000
-- MinIO : http://localhost:9001 (console)
+- MLflow : http://localhost:5500
+- MinIO : http://localhost:9001 (console - `minioadmin/minioadmin`)
 - Prometheus : http://localhost:9090
-- Grafana : http://localhost:3000 (admin/admin)
-- Tableau de bord Grafana "Dandelion Classifier" (métriques API) et "Airflow Overview" (Scheduler + DagRun)
+- Grafana : http://localhost:3000 (`admin/admin`)
+
+### 🎯 Démo Rapide (10 minutes)
+
+**1. Lancer le pipeline d'entraînement** (7 min d'exécution)
+- Ouvrir Airflow UI : http://localhost:8080 (`admin/admin`)
+- Cliquer sur le DAG `dandelion_data_pipeline`
+- Cliquer sur le bouton ▶️ "Trigger DAG"
+- Le pipeline va : télécharger 400 images → prétraiter → entraîner ResNet18 → sauvegarder dans MinIO
+
+**2. Pendant l'entraînement, montrer :**
+- **MinIO** (http://localhost:9001) : Voir les buckets et les données uploadées
+- **MLflow** (http://localhost:5500) : Voir les métriques en temps réel
+- **Grafana** (http://localhost:3000) : Dashboards de monitoring
+
+**3. Tester les prédictions** (une fois le training terminé)
+- **Streamlit** (http://localhost:8501) : Uploader une image et voir la prédiction
+- **FastAPI** (http://localhost:8000/docs) : Tester l'endpoint `/predict`
+
+### 🐛 Dépannage
+
+**Airflow ne démarre pas :**
+```bash
+docker compose down -v  # ⚠️ Efface tout
+docker compose up airflow-init
+docker compose up -d
+```
+
+**L'API dit "Model not available" :**
+C'est normal au démarrage ! Le modèle n'existe pas encore. Lancez d'abord le pipeline Airflow.
+
+**Télécharger des images de test :**
+```bash
+# Image de pissenlit
+curl -o test_dandelion.jpg "https://raw.githubusercontent.com/btphan95/greenr-airflow/refs/heads/master/data/dandelion/00000001.jpg"
+
+# Image d'herbe
+curl -o test_grass.jpg "https://raw.githubusercontent.com/btphan95/greenr-airflow/refs/heads/master/data/grass/00000001.jpg"
+```
+
+**Arrêter les services :**
+```bash
+docker compose stop  # Garde les données
+docker compose down -v  # ⚠️ Supprime tout
+```
 
 Sur Streamlit, vous pouvez choisir entre deux modes d'inférence :
 - **API distante** : envoie l'image à FastAPI (`/predict`).
