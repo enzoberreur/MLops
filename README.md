@@ -104,6 +104,13 @@ graph LR
     style I fill:#e8f5e9
 ```
 
+**Explication du flux :**
+
+1. **Data Ingestion** : Airflow télécharge automatiquement 400 images (200 pissenlits + 200 herbe) depuis GitHub et les stocke dans MinIO
+2. **Training** : PyTorch charge les données depuis MinIO, entraîne un modèle ResNet18, et log toutes les métriques dans MLflow. Le modèle entraîné est sauvegardé dans MinIO
+3. **Serving** : L'API FastAPI charge le meilleur modèle depuis MinIO au démarrage. Streamlit fournit une interface web pour uploader des images et obtenir des prédictions
+4. **Monitoring** : FastAPI expose des métriques Prometheus (nombre de prédictions, latence). Grafana visualise ces métriques en temps réel via des dashboards
+
 ### Composants Principaux
 
 | Service | Port | Rôle |
@@ -142,6 +149,29 @@ sequenceDiagram
     A->>S: Résultat + confiance
     S->>U: Affiche résultat
 ```
+
+**Déroulement chronologique détaillé :**
+
+**Phase 1 - Pipeline d'entraînement (exécuté par Airflow) :**
+1. Airflow démarre le DAG `dandelion_data_pipeline` (programmé hebdomadairement ou déclenché manuellement)
+2. Téléchargement de 200 images de pissenlits et 200 images d'herbe depuis GitHub
+3. Upload des images brutes dans MinIO (bucket `dandelion-data/raw/`)
+4. Prétraitement : redimensionnement à 128×128 pixels et normalisation
+5. Upload des images traitées dans MinIO (bucket `dandelion-data/processed/`)
+6. Lancement de l'enécution PyTorch : entraînement du modèle ResNet18 sur 3-5 époques
+7. MLflow enregistre automatiquement : accuracy, loss, F1-score, hyperparamètres
+8. Sauvegarde du meilleur modèle dans MinIO (bucket `dandelion-models/models/latest/best_model.pt`)
+
+**Phase 2 - Inférence en temps réel (utilisateur final) :**
+1. L'utilisateur ouvre l'interface Streamlit sur son navigateur (http://localhost:8501)
+2. L'utilisateur uploade une photo de plante via l'interface web
+3. Streamlit envoie l'image à l'API FastAPI via une requête POST sur `/predict`
+4. FastAPI charge le modèle depuis MinIO (uniquement au premier démarrage, puis gardé en mémoire)
+5. Le modèle effectue la prédiction : classe (dandelion/grass) + score de confiance
+6. FastAPI retourne le résultat JSON avec la prédiction et les probabilités pour chaque classe
+7. Streamlit affiche visuellement le résultat à l'utilisateur avec la confiance
+8. Parallèlement, Prometheus collecte les métriques (temps de réponse, nombre de prédictions)
+9. Grafana met à jour les dashboards en temps réel pour le monitoring
 
 ## Prérequis
 
