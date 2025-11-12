@@ -69,95 +69,78 @@ Les métriques dépendent fortement des tirages aléatoires (split train/val). A
 
 ## Architecture
 
+### Pipeline MLOps Complet
+
 ```mermaid
-graph TB
-    subgraph DataSource["📦 Data Source"]
-        GH[GitHub Raw Images]
+graph LR
+    subgraph "1️⃣ DATA INGESTION"
+        A[GitHub Images] -->|télécharge| B[Airflow DAG]
+        B -->|stocke| C[MinIO S3]
     end
     
-    subgraph Orchestration["🔄 Orchestration Layer"]
-        AF[Airflow Scheduler]
-        AFW[Airflow Webserver :8080]
-        DAG1[dandelion_data_pipeline]
-        DAG2[dandelion_retrain_pipeline]
+    subgraph "2️⃣ TRAINING"
+        C -->|charge données| D[PyTorch ResNet18]
+        D -->|log métriques| E[MLflow :5500]
+        D -->|sauvegarde modèle| C
     end
     
-    subgraph Storage["💾 Storage Layer"]
-        MINIO[MinIO S3 :9000/:9001]
-        PG[(PostgreSQL)]
-        BUCKET1[dandelion-data]
-        BUCKET2[dandelion-models]
-        BUCKET3[mlflow-artifacts]
+    subgraph "3️⃣ SERVING"
+        C -->|charge modèle| F[FastAPI :8000]
+        F -->|UI web| G[Streamlit :8501]
     end
     
-    subgraph MLOps["🤖 ML Training & Tracking"]
-        MLF[MLflow Tracking :5500]
-        TRAIN[PyTorch ResNet18]
+    subgraph "4️⃣ MONITORING"
+        F -->|métriques| H[Prometheus :9090]
+        H -->|dashboards| I[Grafana :3000]
     end
+
+    style A fill:#e3f2fd
+    style C fill:#e1f5ff
+    style D fill:#fff3e0
+    style E fill:#fff3e0
+    style F fill:#f3e5f5
+    style G fill:#f3e5f5
+    style H fill:#e8f5e9
+    style I fill:#e8f5e9
+```
+
+### Composants Principaux
+
+| Service | Port | Rôle |
+|---------|------|------|
+| **Airflow** | 8080 | Orchestration des pipelines (data + training) |
+| **MinIO** | 9000/9001 | Stockage S3 (données + modèles + artifacts) |
+| **MLflow** | 5500 | Tracking des expériences ML |
+| **FastAPI** | 8000 | API de prédiction |
+| **Streamlit** | 8501 | Interface utilisateur web |
+| **Prometheus** | 9090 | Collecte des métriques |
+| **Grafana** | 3000 | Visualisation des dashboards |
+
+### Flux de Données Détaillé
+
+```mermaid
+sequenceDiagram
+    participant U as Utilisateur
+    participant S as Streamlit
+    participant A as FastAPI
+    participant M as MinIO
+    participant ML as MLflow
+    participant Air as Airflow
     
-    subgraph Serving["🚀 Serving Layer"]
-        API[FastAPI :8000]
-        STR[Streamlit :8501]
-    end
+    Note over Air,M: Pipeline d'entraînement
+    Air->>M: 1. Upload données brutes
+    Air->>Air: 2. Prétraitement images
+    Air->>M: 3. Upload données traitées
+    Air->>ML: 4. Training PyTorch
+    ML->>M: 5. Sauvegarde modèle
     
-    subgraph Monitoring["📊 Monitoring Layer"]
-        PROM[Prometheus :9090]
-        GRAF[Grafana :3000]
-        STATSD[StatsD Exporter :9102]
-    end
-    
-    subgraph CICD["⚙️ CI/CD"]
-        GHA[GitHub Actions]
-        K8S[Minikube/K8s]
-    end
-    
-    GH -->|download images| DAG1
-    DAG1 -->|create & download| AF
-    DAG1 -->|upload raw| BUCKET1
-    DAG1 -->|preprocess| AF
-    DAG1 -->|upload processed| BUCKET1
-    DAG1 -->|train model| TRAIN
-    
-    DAG2 -->|sync data| BUCKET1
-    DAG2 -->|retrain| TRAIN
-    
-    TRAIN -->|log metrics| MLF
-    TRAIN -->|save artifacts| BUCKET3
-    TRAIN -->|save model| BUCKET2
-    MLF -->|store| MINIO
-    
-    API -->|load model| BUCKET2
-    STR -->|upload image| API
-    STR -->|or load from| MINIO
-    API -->|predict| STR
-    
-    AF --> PG
-    AFW --> PG
-    MINIO --> BUCKET1
-    MINIO --> BUCKET2
-    MINIO --> BUCKET3
-    
-    API -->|expose /metrics| PROM
-    AF -->|statsd| STATSD
-    STATSD -->|metrics| PROM
-    PROM -->|scrape| GRAF
-    
-    GHA -->|build & push| GHA
-    GHA -->|deploy| K8S
-    K8S -->|apply| API
-    K8S -->|apply| STR
-    
-    classDef storage fill:#e1f5ff,stroke:#01579b,stroke-width:2px
-    classDef compute fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef serving fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef monitoring fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    classDef orchestration fill:#fff9c4,stroke:#f57f17,stroke-width:2px
-    
-    class MINIO,PG,BUCKET1,BUCKET2,BUCKET3 storage
-    class TRAIN,MLF,GHA,K8S compute
-    class API,STR serving
-    class PROM,GRAF,STATSD monitoring
-    class AF,AFW,DAG1,DAG2 orchestration
+    Note over U,A: Inférence
+    U->>S: Upload image
+    S->>A: POST /predict
+    A->>M: Charge modèle (si nécessaire)
+    A->>A: Prédiction
+    A->>S: Résultat + confiance
+    S->>U: Affiche résultat
 ```
 
 ## Prérequis
