@@ -71,91 +71,82 @@ Les métriques dépendent fortement des tirages aléatoires (split train/val). A
 
 ```mermaid
 graph TB
-    subgraph "Data Source"
-        GH[GitHub<br/>Raw Images]
+    subgraph DataSource["📦 Data Source"]
+        GH[GitHub Raw Images]
     end
     
-    subgraph "Orchestration Layer"
+    subgraph Orchestration["🔄 Orchestration Layer"]
         AF[Airflow Scheduler]
-        AFW[Airflow Webserver<br/>:8080]
-        DAG1[dandelion_data_pipeline<br/>@weekly]
-        DAG2[dandelion_retrain_pipeline<br/>@monthly]
+        AFW[Airflow Webserver :8080]
+        DAG1[dandelion_data_pipeline]
+        DAG2[dandelion_retrain_pipeline]
     end
     
-    subgraph "Storage Layer"
-        MINIO[MinIO S3<br/>:9000/:9001]
-        PG[(PostgreSQL<br/>Airflow DB)]
-        BUCKET1[dandelion-data<br/>raw/processed/]
-        BUCKET2[dandelion-models<br/>models/latest/]
-        BUCKET3[mlflow-artifacts<br/>experiments/]
+    subgraph Storage["💾 Storage Layer"]
+        MINIO[MinIO S3 :9000/:9001]
+        PG[(PostgreSQL)]
+        BUCKET1[dandelion-data]
+        BUCKET2[dandelion-models]
+        BUCKET3[mlflow-artifacts]
     end
     
-    subgraph "ML Training & Tracking"
-        MLF[MLflow Tracking<br/>:5500]
-        TRAIN[PyTorch Training<br/>ResNet18]
+    subgraph MLOps["🤖 ML Training & Tracking"]
+        MLF[MLflow Tracking :5500]
+        TRAIN[PyTorch ResNet18]
     end
     
-    subgraph "Serving Layer"
-        API[FastAPI<br/>:8000]
-        STR[Streamlit UI<br/>:8501]
+    subgraph Serving["🚀 Serving Layer"]
+        API[FastAPI :8000]
+        STR[Streamlit :8501]
     end
     
-    subgraph "Monitoring Layer"
-        PROM[Prometheus<br/>:9090]
-        GRAF[Grafana<br/>:3000]
-        STATSD[StatsD Exporter<br/>:9102]
+    subgraph Monitoring["📊 Monitoring Layer"]
+        PROM[Prometheus :9090]
+        GRAF[Grafana :3000]
+        STATSD[StatsD Exporter :9102]
     end
     
-    subgraph "CI/CD"
+    subgraph CICD["⚙️ CI/CD"]
         GHA[GitHub Actions]
         K8S[Minikube/K8s]
     end
     
-    %% Data Pipeline Flow
     GH -->|download images| DAG1
-    DAG1 -->|1. create folders| AF
-    DAG1 -->|2. download| AF
-    DAG1 -->|3. upload raw| BUCKET1
-    DAG1 -->|4. preprocess| AF
-    DAG1 -->|5. upload processed| BUCKET1
-    DAG1 -->|6. train model| TRAIN
+    DAG1 -->|create & download| AF
+    DAG1 -->|upload raw| BUCKET1
+    DAG1 -->|preprocess| AF
+    DAG1 -->|upload processed| BUCKET1
+    DAG1 -->|train model| TRAIN
     
-    %% Retrain Pipeline Flow
-    DAG2 -->|sync processed data| BUCKET1
+    DAG2 -->|sync data| BUCKET1
     DAG2 -->|retrain| TRAIN
     
-    %% Training Flow
-    TRAIN -->|log metrics/params| MLF
+    TRAIN -->|log metrics| MLF
     TRAIN -->|save artifacts| BUCKET3
-    TRAIN -->|save best model| BUCKET2
-    MLF -->|store artifacts| MINIO
+    TRAIN -->|save model| BUCKET2
+    MLF -->|store| MINIO
     
-    %% Serving Flow
-    API -->|load model at startup| BUCKET2
+    API -->|load model| BUCKET2
     STR -->|upload image| API
-    STR -->|or load model from| MINIO
+    STR -->|or load from| MINIO
     API -->|predict| STR
     
-    %% Storage Connections
     AF --> PG
     AFW --> PG
     MINIO --> BUCKET1
     MINIO --> BUCKET2
     MINIO --> BUCKET3
     
-    %% Monitoring Flow
-    API -->|/metrics| PROM
-    AF -->|statsd metrics| STATSD
-    STATSD -->|expose metrics| PROM
+    API -->|expose /metrics| PROM
+    AF -->|statsd| STATSD
+    STATSD -->|metrics| PROM
     PROM -->|scrape| GRAF
     
-    %% CI/CD Flow
-    GHA -->|build & push image| GHA
+    GHA -->|build & push| GHA
     GHA -->|deploy| K8S
-    K8S -->|kubectl apply| API
-    K8S -->|kubectl apply| STR
+    K8S -->|apply| API
+    K8S -->|apply| STR
     
-    %% Styling
     classDef storage fill:#e1f5ff,stroke:#01579b,stroke-width:2px
     classDef compute fill:#fff3e0,stroke:#e65100,stroke-width:2px
     classDef serving fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
