@@ -1,6 +1,7 @@
 # MLOps Dandelion Classifier
 
 Projet MLOps minimaliste pour classifier des images de pissenlits et d'herbe.
+Enzo BERREUR, Elea NIZAM, Jean-Baptiste BRUN, Elisa LECLERC
 
 ## Stack
 
